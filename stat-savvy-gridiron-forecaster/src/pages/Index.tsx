@@ -33,18 +33,22 @@ const Index = () => {
   }, []);
 
   const loadInitialData = async () => {
+    console.log("loadInitialData CALLED");
     try {
       setIsLoadingData(true);
       setError(null);
-      
+
+      console.log("Calling getTeams...");
+
       const [playersData, teamsData] = await Promise.all([
         apiService.getPlayers(),
         apiService.getTeams()
       ]);
-      
+
       setPlayers(playersData);
       console.log('Loaded players:', playersData);
       setTeams(teamsData);
+      console.log('Loaded teams:', teamsData);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load data';
       setError(errorMessage);
@@ -59,6 +63,7 @@ const Index = () => {
   };
 
   const handlePredict = async (playerName: string, opponentTeam: string, week: string) => {
+    console.log('handlePredict called with:', playerName, opponentTeam, week);
     try {
       setIsLoadingPrediction(true);
       setError(null);
@@ -87,6 +92,17 @@ const Index = () => {
     }
   };
 
+  if (!isLoadingData && teams.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4 text-red-500">No teams found</h2>
+          <p className="text-lg text-muted-foreground mb-4">Could not load NFL teams from the backend. Please check your backend server and network connection.</p>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoadingData) {
     return (
       <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
@@ -95,14 +111,10 @@ const Index = () => {
     );
   }
 
+  console.log("HERO SECTION SHOULD BE VISIBLE!");
+
   return (
-    <div
-      className="min-h-screen bg-gradient-hero transition-all duration-500"
-      ref={mainRef}
-      style={{
-        background: `linear-gradient(135deg, hsl(215, 25%, 8%) 0%, hsl(215, 25%, 12%) ${80 - scrollY / 20}%, hsl(142, 76%, 36%) ${90 - scrollY / 40}%)`,
-      }}
-    >
+    <div className="min-h-screen bg-gradient-hero transition-all duration-500">
       {/* Header */}
       <header className="bg-card/50 backdrop-blur-sm border-b border-border sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
@@ -198,7 +210,7 @@ const Index = () => {
         </div>
       </main>
 
-      {/* Floating Footer with Credits */}
+      {/* Footer */}
       <footer className="bg-card/90 border-t border-accent/40 px-6 py-3 flex items-center justify-between text-sm text-muted-foreground backdrop-blur-md mt-12">
         <span className="font-semibold text-primary">NFL Analytics</span>
         <a

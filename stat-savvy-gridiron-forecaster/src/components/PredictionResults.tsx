@@ -68,28 +68,31 @@ const PredictionResults = ({ prediction }: PredictionResultsProps) => {
     },
     {
       title: 'Rush TDs',
-      predicted: predictions.rushingTouchdowns,
+      predicted: predictions.rushingTouchdowns ?? 0,
       icon: Trophy,
       color: 'text-stat-touchdowns',
       unit: '',
     },
     {
       title: 'Rec TDs',
-      predicted: predictions.receivingTouchdowns,
+      predicted: predictions.receivingTouchdowns ?? 0,
       icon: Trophy,
       color: 'text-stat-touchdowns',
       unit: '',
     },
     {
       title: 'Pass TDs',
-      predicted: predictions.passingTouchdowns,
+      predicted: predictions.passingTouchdowns ?? 0,
       icon: Trophy,
       color: 'text-stat-touchdowns',
       unit: '',
     },
   ];
 
-  const totalPredictedTDs = predictions.rushingTouchdowns + predictions.receivingTouchdowns + predictions.passingTouchdowns;
+  const totalPredictedTDs =
+    (predictions.rushingTouchdowns ?? 0) +
+    (predictions.receivingTouchdowns ?? 0) +
+    (predictions.passingTouchdowns ?? 0);
   const totalYards = predictions.rushingYards + predictions.receivingYards + predictions.passingYards;
 
   return (
@@ -103,9 +106,6 @@ const PredictionResults = ({ prediction }: PredictionResultsProps) => {
                 {player.name}
               </h2>
               <div className="flex items-center gap-2 mt-1">
-                <Badge className="bg-primary-foreground/20 text-primary-foreground">
-                  {player.position}
-                </Badge>
                 <span className="text-primary-foreground/80">{player.team}</span>
               </div>
             </div>
@@ -116,6 +116,11 @@ const PredictionResults = ({ prediction }: PredictionResultsProps) => {
           </div>
         </CardContent>
       </Card>
+
+      {/* PlayPredict Summary Paragraph */}
+      <p className="text-base text-muted-foreground text-center my-4">
+        {player.name} is projected for <b>{totalYards.toFixed(0)} total yards</b> and <b>{totalPredictedTDs.toFixed(1)} total TDs</b> against {opponent}.
+      </p>
 
       {/* Quick Stats Overview */}
       <div className="grid grid-cols-2 gap-4">

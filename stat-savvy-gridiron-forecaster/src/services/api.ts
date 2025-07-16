@@ -1,6 +1,6 @@
 import { Player, PredictionRequest, PredictionResponse } from '@/types';
 
-const API_BASE_URL = 'http://localhost:4000/api';
+const API_BASE_URL = 'http://127.0.0.1:4000/api';
 
 export class APIError extends Error {
   constructor(message: string, public status?: number) {
@@ -21,33 +21,48 @@ async function handleResponse<T>(response: Response): Promise<T> {
 export const apiService = {
   async getPlayers(searchTerm = ''): Promise<Player[]> {
     try {
-      // If searchTerm is empty, do not include the query param (fetch all players)
-      const url = searchTerm && searchTerm.length > 0
-        ? `${API_BASE_URL}/players/search?query=${encodeURIComponent(searchTerm)}`
-        : `${API_BASE_URL}/players/search`;
-      const response = await fetch(url);
-      const players = await handleResponse<any[]>(response);
-      return players
-        .filter(player => player.playerName && typeof player.playerName === 'string' && player.playerName.trim() !== '')
-        .map((player: any) => ({
-          id: player.playerName,
-          name: player.playerName,
-          position: apiService.getPositionFromStats(player),
-          team: player.team || player.Team || 'Unknown'
-        }));
+      // Get players by position (QB, RB, WR, TE)
+      const positions = ['QB', 'RB', 'WR', 'TE'];
+      const allPlayers: Player[] = [];
+      
+      for (const position of positions) {
+        const url = `${API_BASE_URL}/players?position=${position}`;
+        const response = await fetch(url);
+        const data = await handleResponse<any>(response);
+        
+        if (data.players && Array.isArray(data.players)) {
+          const positionPlayers = data.players
+            .filter((playerName: string) => 
+              !searchTerm || playerName.toLowerCase().includes(searchTerm.toLowerCase())
+            )
+            .map((playerName: string) => ({
+              id: playerName,
+              name: playerName,
+              position: position
+            }));
+          
+          allPlayers.push(...positionPlayers);
+        }
+      }
+      
+      // Deduplicate by name, prefer position priority: QB > RB > WR > TE
+      const positionPriority = { QB: 1, RB: 2, WR: 3, TE: 4 };
+      const playerMap = new Map();
+      for (const player of allPlayers) {
+        if (
+          !playerMap.has(player.name) ||
+          positionPriority[player.position] < positionPriority[playerMap.get(player.name).position]
+        ) {
+          playerMap.set(player.name, player);
+        }
+      }
+      return Array.from(playerMap.values());
     } catch (error) {
       if (error instanceof APIError) {
         throw error;
       }
       throw new APIError('Failed to fetch players. Please check your connection.');
     }
-  },
-
-  getPositionFromStats(player: any): string {
-    if (player.totalPassingYards > 0) return 'QB';
-    if (player.totalRushingYards > player.totalReceivingYards) return 'RB';
-    if (player.totalReceivingYards > 0) return 'WR';
-    return 'Unknown';
   },
 
   async getTeams(): Promise<string[]> {
@@ -72,15 +87,13 @@ export const apiService = {
       const response = await fetch(url);
       const data = await handleResponse<any>(response);
 
-      // Use the team from the backend response
-      const playerTeam = data.team || 'Unknown';
-
+      // Map backend response to frontend format
       return {
         player: {
           id: request.playerId,
-          name: request.playerId,
-          position: 'Unknown',
-          team: playerTeam
+          name: data.playerName || request.playerId,
+          position: data.position || 'Unknown',
+          team: 'Unknown' // Backend doesn't provide team info
         },
         opponent: request.opponentTeam,
         predictions: {
@@ -92,13 +105,13 @@ export const apiService = {
           passingTouchdowns: data.predictedPassingTDs || 0,
         },
         seasonStats: {
-          gamesPlayed: 0, // Not provided by backend
-          avgRushingYards: 0,
-          avgReceivingYards: 0,
-          avgPassingYards: 0,
-          totalRushingTouchdowns: 0,
-          totalReceivingTouchdowns: 0,
-          totalPassingTouchdowns: 0,
+          gamesPlayed: data.gamesAnalyzed || 0,
+          avgRushingYards: data.predictedRushingYards || 0,
+          avgReceivingYards: data.predictedReceivingYards || 0,
+          avgPassingYards: data.predictedPassingYards || 0,
+          totalRushingTouchdowns: data.predictedRushingTDs || 0,
+          totalReceivingTouchdowns: data.predictedReceivingTDs || 0,
+          totalPassingTouchdowns: data.predictedPassingTDs || 0,
         }
       };
     } catch (error) {

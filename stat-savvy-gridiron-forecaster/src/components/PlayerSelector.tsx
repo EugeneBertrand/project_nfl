@@ -13,35 +13,90 @@ interface PlayerSelectorProps {
   isLoading?: boolean;
 }
 
-const PlayerSelector = ({ onPredict, isLoading }: PlayerSelectorProps) => {
+const TEAM_NAME_MAP: Record<string, string> = {
+  ARI: 'Arizona Cardinals',
+  ATL: 'Atlanta Falcons',
+  BAL: 'Baltimore Ravens',
+  BUF: 'Buffalo Bills',
+  CAR: 'Carolina Panthers',
+  CHI: 'Chicago Bears',
+  CIN: 'Cincinnati Bengals',
+  CLE: 'Cleveland Browns',
+  DAL: 'Dallas Cowboys',
+  DEN: 'Denver Broncos',
+  DET: 'Detroit Lions',
+  GB: 'Green Bay Packers',
+  HOU: 'Houston Texans',
+  IND: 'Indianapolis Colts',
+  JAX: 'Jacksonville Jaguars',
+  KC: 'Kansas City Chiefs',
+  LA: 'Los Angeles Rams',
+  LAC: 'Los Angeles Chargers',
+  LV: 'Las Vegas Raiders',
+  MIA: 'Miami Dolphins',
+  MIN: 'Minnesota Vikings',
+  NE: 'New England Patriots',
+  NO: 'New Orleans Saints',
+  NYG: 'New York Giants',
+  NYJ: 'New York Jets',
+  PHI: 'Philadelphia Eagles',
+  PIT: 'Pittsburgh Steelers',
+  SEA: 'Seattle Seahawks',
+  SF: 'San Francisco 49ers',
+  TB: 'Tampa Bay Buccaneers',
+  TEN: 'Tennessee Titans',
+  WAS: 'Washington Commanders',
+};
+
+const PlayerSelector = ({
+  players = [],
+  teams = [],
+  onPredict = () => {}, // Default no-op function
+  ...props
+}: PlayerSelectorProps) => {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredPlayers, setFilteredPlayers] = useState<Player[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start as true!
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [teams, setTeams] = useState<string[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [loadingTeams, setLoadingTeams] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const [teamSearchTerm, setTeamSearchTerm] = useState('');
   const [teamDropdownOpen, setTeamDropdownOpen] = useState(false);
   const [week, setWeek] = useState<string>('');
+  const [allPlayers, setAllPlayers] = useState<Player[]>([]);
+  const [allTeams, setAllTeams] = useState<string[]>(teams);
 
+  // Fetch all players ONCE on mount
   useEffect(() => {
-    setLoading(true);
-    apiService.getPlayers(searchTerm)
-      .then(players => setFilteredPlayers(players))
+    apiService.getPlayers('')
+      .then(players => setAllPlayers(players))
       .finally(() => setLoading(false));
-  }, [searchTerm]);
-
-  useEffect(() => {
-    setLoadingTeams(true);
-    apiService.getTeams()
-      .then(teams => setTeams(teams.filter(team => !!team && team.trim() !== '')))
-      .finally(() => setLoadingTeams(false));
   }, []);
 
-  // Call /api/simulate when player, opponent, and week are selected
+  // Fetch all teams ONCE on mount if not provided
+  useEffect(() => {
+    if (!teams || teams.length === 0) {
+      setLoadingTeams(true);
+      apiService.getTeams()
+        .then(fetchedTeams => setAllTeams(fetchedTeams))
+        .finally(() => setLoadingTeams(false));
+    } else {
+      setAllTeams(teams);
+    }
+  }, [teams]);
+
+  // Filter players as the user types
+  useEffect(() => {
+    setFilteredPlayers(
+      allPlayers.filter(player =>
+        player.name.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    );
+  }, [searchTerm, allPlayers]);
+
+  // Call /api/predict/player when player, opponent, and week are selected
   useEffect(() => {
     if (selectedPlayer && selectedTeam && week) {
       const params = new URLSearchParams({
@@ -49,7 +104,7 @@ const PlayerSelector = ({ onPredict, isLoading }: PlayerSelectorProps) => {
         opponent: selectedTeam,
         week: week,
       });
-      fetch(`http://localhost:4000/api/simulate?${params.toString()}`)
+      fetch(`http://localhost:4000/api/predict/player?${params.toString()}`)
         .then(res => res.json())
         .then(data => {
           console.log('Simulate result:', data);
@@ -102,25 +157,26 @@ const PlayerSelector = ({ onPredict, isLoading }: PlayerSelectorProps) => {
             }}
           >
             <SelectTrigger className="bg-background border-border">
-              <SelectValue placeholder={loading ? "Loading..." : "Select a player..."} />
+              <SelectValue placeholder={loading ? "" : "Select a player..."} />
             </SelectTrigger>
-            <SelectContent className="bg-popover border-border max-h-60">
-              {filteredPlayers
-                .filter(player => !!player.name && player.name.trim() !== '')
-                .map(player => (
-                  <SelectItem key={player.name} value={player.name}>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{player.name}</span>
-                      <Badge variant="secondary" className="text-xs">
-                        {player.position}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {player.team}
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              {filteredPlayers.filter(player => !!player.name && player.name.trim() !== '').length === 0 && !loading && (
+            <SelectContent side="bottom" avoidCollisions={false} className="bg-popover border-border max-h-60">
+              {loading ? (
+                <div className="p-4 text-center text-muted-foreground">Loading players...</div>
+              ) : (
+                filteredPlayers
+                  .filter(player => !!player.name && player.name.trim() !== '')
+                  .map(player => (
+                    <SelectItem key={player.name} value={player.name}>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{player.name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {player.team}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))
+              )}
+              {!loading && filteredPlayers.filter(player => !!player.name && player.name.trim() !== '').length === 0 && (
                 <div className="p-4 text-center text-muted-foreground">No players found.</div>
               )}
             </SelectContent>
@@ -148,16 +204,24 @@ const PlayerSelector = ({ onPredict, isLoading }: PlayerSelectorProps) => {
             <SelectTrigger className="bg-background border-border">
               <SelectValue placeholder={loadingTeams ? "Loading teams..." : "Select opponent team..."} />
             </SelectTrigger>
-            <SelectContent className="bg-popover border-border max-h-60">
-              {teams.filter(team => team.toLowerCase().includes(teamSearchTerm.toLowerCase()))
-                .map(team => (
+            <SelectContent side="bottom" avoidCollisions={false} className="bg-popover border-border max-h-60">
+              {loadingTeams ? (
+                <div className="p-4 text-center text-muted-foreground">Loading teams...</div>
+              ) : null}
+              {(() => {
+                const filtered = allTeams.filter(team => {
+                  const fullName = TEAM_NAME_MAP[team] || team;
+                  return fullName.toLowerCase().includes(teamSearchTerm.toLowerCase()) || team.toLowerCase().includes(teamSearchTerm.toLowerCase());
+                });
+                if (!loadingTeams && filtered.length === 0) {
+                  return <div className="p-4 text-center text-muted-foreground">No teams found.</div>;
+                }
+                return filtered.map(team => (
                   <SelectItem key={team} value={team}>
-                    {team}
+                    {TEAM_NAME_MAP[team] || team}
                   </SelectItem>
-                ))}
-              {teams.filter(team => team.toLowerCase().includes(teamSearchTerm.toLowerCase())).length === 0 && !loadingTeams && (
-                <div className="p-4 text-center text-muted-foreground">No teams found.</div>
-              )}
+                ));
+              })()}
             </SelectContent>
           </Select>
         </div>
@@ -167,7 +231,7 @@ const PlayerSelector = ({ onPredict, isLoading }: PlayerSelectorProps) => {
             <SelectTrigger className="bg-background border-border">
               <SelectValue placeholder="Select week..." />
             </SelectTrigger>
-            <SelectContent className="bg-popover border-border max-h-60">
+            <SelectContent side="bottom" avoidCollisions={false} className="bg-popover border-border max-h-60">
               {[...Array(18)].map((_, i) => (
                 <SelectItem key={i + 1} value={(i + 1).toString()}>
                   Week {i + 1}
@@ -179,7 +243,7 @@ const PlayerSelector = ({ onPredict, isLoading }: PlayerSelectorProps) => {
         {/* Generate Prediction Button */}
         <button
           className="w-full mt-4 py-3 bg-primary text-primary-foreground font-semibold rounded-lg shadow-lg transition-all duration-200 hover:bg-primary/90 disabled:opacity-60 disabled:cursor-not-allowed"
-          disabled={!selectedPlayer || !selectedTeam || !week || isLoading}
+          disabled={!selectedPlayer || !selectedTeam || !week || props.isLoading}
           onClick={() => {
             if (selectedPlayer && selectedTeam && week) {
               onPredict(selectedPlayer.name, selectedTeam, week);
@@ -187,7 +251,7 @@ const PlayerSelector = ({ onPredict, isLoading }: PlayerSelectorProps) => {
           }}
           type="button"
         >
-          {isLoading ? 'Generating Prediction...' : '🚀 Generate Prediction'}
+          {props.isLoading ? 'Generating Prediction...' : '🚀 Generate Prediction'}
         </button>
         {selectedPlayer && (
           <div className="p-4 bg-gradient-primary rounded-lg border border-border animate-fade-in mt-4">
@@ -195,9 +259,6 @@ const PlayerSelector = ({ onPredict, isLoading }: PlayerSelectorProps) => {
               <div>
                 <h3 className="font-bold text-primary-foreground">{selectedPlayer.name}</h3>
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary">
-                    {selectedPlayer.position}
-                  </Badge>
                   <span className="text-sm text-primary-foreground/80">
                     {selectedPlayer.team}
                   </span>

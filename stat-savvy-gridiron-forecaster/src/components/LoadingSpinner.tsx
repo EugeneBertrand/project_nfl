@@ -1,10 +1,16 @@
-import React from "react";
+import { Loader2 } from 'lucide-react';
 
-const LoadingSpinner: React.FC<{ message?: string }> = ({ message }) => (
-  <div className="flex flex-col items-center justify-center py-8">
-    <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-primary mb-4"></div>
-    {message && <div className="text-muted-foreground text-lg">{message}</div>}
-  </div>
-);
+interface LoadingSpinnerProps {
+  message?: string;
+}
 
-export default LoadingSpinner; 
+const LoadingSpinner = ({ message = 'Loading...' }: LoadingSpinnerProps) => {
+  return (
+    <div className="flex flex-col items-center justify-center p-8 space-y-4">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <p className="text-muted-foreground text-sm">{message}</p>
+    </div>
+  );
+};
+
+export default LoadingSpinner;

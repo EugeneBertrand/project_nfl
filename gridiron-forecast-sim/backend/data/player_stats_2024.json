@@ -1,0 +1,22 @@
+[
+  {
+    "playerName": "J.Allen",
+    "team": "Buffalo Bills",
+    "position": "QB",
+    "gamesPlayed": 17,
+    "passingYards": 4300,
+    "rushingYards": 500,
+    "passingTDs": 35,
+    "rushingTDs": 7
+  },
+  {
+    "playerName": "J.Cook",
+    "team": "Buffalo Bills",
+    "position": "RB",
+    "gamesPlayed": 17,
+    "rushingYards": 1100,
+    "receivingYards": 300,
+    "rushingTDs": 8,
+    "receivingTDs": 2
+  }
+]

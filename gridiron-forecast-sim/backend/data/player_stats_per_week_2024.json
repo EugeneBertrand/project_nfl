@@ -1,0 +1,18 @@
+[
+    {
+      "playerName": "J.Allen",
+      "week": 1,
+      "passingYards": 250,
+      "rushingYards": 30,
+      "passingTDs": 2,
+      "rushingTDs": 1
+    },
+    {
+      "playerName": "J.Allen",
+      "week": 2,
+      "passingYards": 300,
+      "rushingYards": 40,
+      "passingTDs": 3,
+      "rushingTDs": 0
+    }
+  ]
