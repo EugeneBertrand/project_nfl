@@ -1,0 +1,4 @@
+node_modules/
+*.db
+*.d.ts
+*.backup
