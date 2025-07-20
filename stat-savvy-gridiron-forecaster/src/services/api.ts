@@ -1,6 +1,6 @@
 import { Player, PredictionRequest, PredictionResponse } from '@/types';
 
-const API_BASE_URL = 'https://cors-anywhere.herokuapp.com/http://64.23.225.112:4000/api';
+const API_BASE_URL = 'http://64.23.225.112:4000/api';
 
 export class APIError extends Error {
   constructor(message: string, public status?: number) {
