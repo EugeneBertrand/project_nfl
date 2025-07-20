@@ -23,6 +23,19 @@ app.get('/', (req, res) => {
   res.json({ message: 'NFL Analytics Backend is running!' });
 });
 
+// Add a simple /api endpoint for debugging
+app.get('/api', (req, res) => {
+  res.json({ 
+    message: 'NFL Analytics API is running!',
+    endpoints: [
+      '/api/teams',
+      '/api/players',
+      '/api/predict/player',
+      '/api/predict/weekly'
+    ]
+  });
+});
+
 // Helper to normalize player names for flexible matching
 function normalizePlayerName(name: string) {
   return (name || '')
