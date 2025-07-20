@@ -9,13 +9,7 @@ const PORT = process.env.PORT || 4000;
 
 
 app.use(cors({
-  origin: [
-    'https://playpredictapp.vercel.app',
-    'https://playpredictapp-nsa8y3awk-eugenebertrands-projects.vercel.app',
-    'http://localhost:5173', 
-    'http://localhost:3000'
-  ],
-  credentials: true,
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
