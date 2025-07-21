@@ -139,7 +139,7 @@ const PlayerSelector = ({
           <label className="text-sm font-medium text-foreground">Search Players</label>
           <Input
             ref={inputRef}
-            placeholder="Type to search players..."
+            placeholder="Type to search players (last name)..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             onKeyDown={handleInputKeyDown}
